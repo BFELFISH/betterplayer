@@ -57,7 +57,9 @@ class BetterPlayerState extends State<BetterPlayer> {
   @override
   void initState() {
     super.initState();
-    _setup();
+    Future.delayed(Duration.zero, () {
+      _setup();
+    });
   }
 
   void _setup() {
