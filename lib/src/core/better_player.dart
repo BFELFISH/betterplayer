@@ -11,15 +11,11 @@ import 'package:wakelock/wakelock.dart';
 import 'better_player_controller_provider.dart';
 
 typedef Widget BetterPlayerRoutePageBuilder(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    BetterPlayerControllerProvider controllerProvider);
+    BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, BetterPlayerControllerProvider controllerProvider);
 
 class BetterPlayer extends StatefulWidget {
   BetterPlayer({Key key, this.controller})
-      : assert(
-            controller != null, 'You must provide a better player controller'),
+      : assert(controller != null, 'You must provide a better player controller'),
         super(key: key);
 
   factory BetterPlayer.network(
@@ -29,8 +25,7 @@ class BetterPlayer extends StatefulWidget {
       BetterPlayer(
         controller: BetterPlayerController(
           betterPlayerConfiguration ?? BetterPlayerConfiguration(),
-          betterPlayerDataSource:
-              BetterPlayerDataSource(BetterPlayerDataSourceType.NETWORK, url),
+          betterPlayerDataSource: BetterPlayerDataSource(BetterPlayerDataSourceType.NETWORK, url),
         ),
       );
 
@@ -41,8 +36,7 @@ class BetterPlayer extends StatefulWidget {
       BetterPlayer(
         controller: BetterPlayerController(
           betterPlayerConfiguration ?? BetterPlayerConfiguration(),
-          betterPlayerDataSource:
-              BetterPlayerDataSource(BetterPlayerDataSourceType.FILE, url),
+          betterPlayerDataSource: BetterPlayerDataSource(BetterPlayerDataSourceType.FILE, url),
         ),
       );
 
@@ -55,20 +49,21 @@ class BetterPlayer extends StatefulWidget {
 }
 
 class BetterPlayerState extends State<BetterPlayer> {
-  BetterPlayerDataSource get betterPlayerDataSource =>
-      widget.controller.betterPlayerDataSource;
+  BetterPlayerDataSource get betterPlayerDataSource => widget.controller.betterPlayerDataSource;
 
   bool _isFullScreen = false;
+  bool _hasDispose = false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
-      _setup();
-    });
+    _setup();
   }
 
-  void _setup() async {
+  void _setup() {
+    if (_hasDispose) {
+      return;
+    }
     widget.controller.addListener(onFullScreenChanged);
     var locale = Locale("en", "US");
     if (mounted) {
@@ -87,6 +82,7 @@ class BetterPlayerState extends State<BetterPlayer> {
     ///Controller from list widget must be dismissed manually
     if (widget.controller.betterPlayerPlaylistConfiguration == null) {
       widget.controller.dispose();
+      _hasDispose = true;
     }
 
     super.dispose();
@@ -123,10 +119,7 @@ class BetterPlayerState extends State<BetterPlayer> {
     );
   }
 
-  Widget _buildFullScreenVideo(
-      BuildContext context,
-      Animation<double> animation,
-      BetterPlayerControllerProvider controllerProvider) {
+  Widget _buildFullScreenVideo(BuildContext context, Animation<double> animation, BetterPlayerControllerProvider controllerProvider) {
     return Scaffold(
       resizeToAvoidBottomPadding: false,
       body: Container(
@@ -138,10 +131,7 @@ class BetterPlayerState extends State<BetterPlayer> {
   }
 
   AnimatedWidget _defaultRoutePageBuilder(
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-      BetterPlayerControllerProvider controllerProvider) {
+      BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, BetterPlayerControllerProvider controllerProvider) {
     return AnimatedBuilder(
       animation: animation,
       builder: (BuildContext context, Widget child) {
@@ -155,18 +145,14 @@ class BetterPlayerState extends State<BetterPlayer> {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
   ) {
-    var controllerProvider = BetterPlayerControllerProvider(
-        controller: widget.controller, child: _buildPlayer());
+    var controllerProvider = BetterPlayerControllerProvider(controller: widget.controller, child: _buildPlayer());
 
-    var routePageBuilder =
-        widget.controller.betterPlayerConfiguration.routePageBuilder;
+    var routePageBuilder = widget.controller.betterPlayerConfiguration.routePageBuilder;
     if (routePageBuilder == null) {
-      return _defaultRoutePageBuilder(
-          context, animation, secondaryAnimation, controllerProvider);
+      return _defaultRoutePageBuilder(context, animation, secondaryAnimation, controllerProvider);
     }
 
-    return routePageBuilder(
-        context, animation, secondaryAnimation, controllerProvider);
+    return routePageBuilder(context, animation, secondaryAnimation, controllerProvider);
   }
 
   Future<dynamic> _pushFullScreenWidget(BuildContext context) async {
@@ -180,8 +166,7 @@ class BetterPlayerState extends State<BetterPlayer> {
     SystemChrome.setEnabledSystemUIOverlays([]);
     if (isAndroid) {
       SystemChrome.setPreferredOrientations(
-        widget.controller.betterPlayerConfiguration
-            .deviceOrientationsOnFullScreen,
+        widget.controller.betterPlayerConfiguration.deviceOrientationsOnFullScreen,
       );
     }
 
@@ -197,17 +182,14 @@ class BetterPlayerState extends State<BetterPlayer> {
     // so we do not need to check Wakelock.isEnabled.
     Wakelock.disable();
 
-    SystemChrome.setEnabledSystemUIOverlays(
-        widget.controller.systemOverlaysAfterFullScreen);
-    SystemChrome.setPreferredOrientations(
-        widget.controller.deviceOrientationsAfterFullScreen);
+    SystemChrome.setEnabledSystemUIOverlays(widget.controller.systemOverlaysAfterFullScreen);
+    SystemChrome.setPreferredOrientations(widget.controller.deviceOrientationsAfterFullScreen);
   }
 
   Widget _buildPlayer() {
     return VisibilityDetector(
       key: Key("${widget.controller.hashCode}_key"),
-      onVisibilityChanged: (VisibilityInfo info) =>
-          widget.controller.onPlayerVisibilityChanged(info.visibleFraction),
+      onVisibilityChanged: (VisibilityInfo info) => widget.controller.onPlayerVisibilityChanged(info.visibleFraction),
       child: BetterPlayerWithControls(
         controller: widget.controller,
       ),
